@@ -17,10 +17,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repo
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Set up Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
         with:
           python-version: "3.11"
 
@@ -28,7 +28,7 @@ jobs:
         run: pip install yfinance requests
 
       - name: Restore latest Nifty 50 universe
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: nifty50_symbols.json
           key: nifty50-universe-${{ github.run_id }}
@@ -39,7 +39,7 @@ jobs:
         run: python scanner.py --refresh-universe
 
       - name: Save refreshed Nifty 50 universe
-        uses: actions/cache/save@v4
+        uses: actions/cache/save@v5
         with:
           path: nifty50_symbols.json
           key: nifty50-universe-${{ github.run_id }}
@@ -49,10 +49,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repo
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Set up Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
         with:
           python-version: "3.11"
 
@@ -60,7 +60,7 @@ jobs:
         run: pip install yfinance requests
 
       - name: Restore today's alert state
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: alerted_today.json
           key: alerted-state-${{ github.run_id }}
@@ -68,7 +68,7 @@ jobs:
             alerted-state-
 
       - name: Restore latest Nifty 50 universe
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: nifty50_symbols.json
           key: nifty50-universe-${{ github.run_id }}
@@ -82,7 +82,7 @@ jobs:
         run: python scanner.py
 
       - name: Save today's alert state
-        uses: actions/cache/save@v4
+        uses: actions/cache/save@v5
         if: always()
         with:
           path: alerted_today.json
