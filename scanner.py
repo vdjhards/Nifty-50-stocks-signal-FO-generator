@@ -27,15 +27,18 @@ import datetime
 import zoneinfo
 import requests
 import yfinance as yf
+from dotenv import load_dotenv
 
 IST = zoneinfo.ZoneInfo("Asia/Kolkata")
 
+load_dotenv()
 TELEGRAM_BOT_TOKEN = os.environ.get("TELEGRAM_BOT_TOKEN", "")
 TELEGRAM_CHAT_ID = os.environ.get("TELEGRAM_CHAT_ID", "")
 
 STATE_FILE = "alerted_today.json"
 UNIVERSE_FILE = "nifty50_symbols.json"
 NIFTY50_CSV_URL = "https://www.niftyindices.com/IndexConstituent/ind_nifty50list.csv"
+NSE_NIFTY50_CSV_URL = "https://archives.nseindia.com/content/indices/ind_nifty50list.csv"
 
 # Setup window boundaries (IST, naive HH:MM for comparison)
 SETUP_START = datetime.time(9, 15)
@@ -52,17 +55,21 @@ def fetch_nifty50_symbols():
         "Referer": "https://www.niftyindices.com/",
     }
     last_error = None
-    for _ in range(3):
-        try:
-            response = requests.get(NIFTY50_CSV_URL, headers=headers, timeout=20)
-            response.raise_for_status()
-            if response.content.lstrip().startswith(b"<"):
-                raise ValueError("official site returned HTML instead of the constituent CSV")
-            break
-        except (requests.RequestException, ValueError) as e:
-            last_error = e
+    for url in (NIFTY50_CSV_URL, NSE_NIFTY50_CSV_URL):
+        for _ in range(3):
+            try:
+                response = requests.get(url, headers=headers, timeout=20)
+                response.raise_for_status()
+                if response.content.lstrip().startswith(b"<"):
+                    raise ValueError("official site returned HTML instead of the constituent CSV")
+                break
+            except (requests.RequestException, ValueError) as e:
+                last_error = e
+        else:
+            continue
+        break
     else:
-        raise RuntimeError(f"Nifty 50 CSV unavailable after 3 attempts: {last_error}")
+        raise RuntimeError(f"Nifty 50 CSV unavailable from official sources: {last_error}")
 
     rows = csv.DictReader(io.StringIO(response.content.decode("utf-8-sig")))
     symbols = [row["Symbol"].strip() for row in rows if row.get("Symbol")]
@@ -122,6 +129,7 @@ def fetch_intraday(symbol):
         return None
 
 
+def get_setup_candles(df):
     """
     Extract Candle 1 and Candles 2-5 (the coil) from today's data.
     Returns (candle1, coil_candles_list, breakout_candles_df) or None if not enough data yet.

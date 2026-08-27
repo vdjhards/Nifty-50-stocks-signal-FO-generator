@@ -25,7 +25,7 @@ jobs:
           python-version: "3.11"
 
       - name: Install dependencies
-        run: pip install yfinance requests
+        run: pip install yfinance requests python-dotenv
 
       - name: Restore latest Nifty 50 universe
         uses: actions/cache@v5
@@ -57,7 +57,7 @@ jobs:
           python-version: "3.11"
 
       - name: Install dependencies
-        run: pip install yfinance requests
+        run: pip install yfinance requests python-dotenv
 
       - name: Restore today's alert state
         uses: actions/cache@v5
