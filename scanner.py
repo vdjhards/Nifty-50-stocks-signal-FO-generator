@@ -4,7 +4,7 @@
 Pattern:
   - Candle 1 (9:15-9:30 IST) sets the reference range (high/low).
   - Candles 2-5 (9:30-10:30 IST) must stay fully inside Candle 1's range.
-  - From 10:30 IST onward, checked every run, whichever side (high/low)
+    - From 10:30 IST onward until 14:30 IST, checked every run, whichever side (high/low)
     the price closes beyond triggers a signal (BUY on high break, SELL on low break).
   - Target = 1% from entry. SL = Candle 1's opposite extreme.
   - A rule-based confidence score (0-100) is computed per signal.
@@ -13,7 +13,7 @@ Data source: yfinance (15m interval, NSE tickers suffixed with .NS)
 Output: Telegram message via Bot API (colors as emoji, date+time included)
 
 NOTE: This script is designed to be run repeatedly (e.g. every 15 min from
-10:30 to 13:00 IST) via GitHub Actions cron. It tracks which stocks have
+10:30 to 14:30 IST) via GitHub Actions cron. It tracks which stocks have
 ALREADY been alerted today (via a simple local state file) so the same
 stock isn't alerted twice in one day.
 """
@@ -43,7 +43,7 @@ NSE_NIFTY50_CSV_URL = "https://archives.nseindia.com/content/indices/ind_nifty50
 # Setup window boundaries (IST, naive HH:MM for comparison)
 SETUP_START = datetime.time(9, 15)
 COIL_END = datetime.time(10, 30)   # after candle 5 closes
-CUTOFF = datetime.time(13, 0)      # stop looking for fresh breakouts after this
+CUTOFF = datetime.time(14, 30)     # stop looking for fresh breakouts after this
 
 TARGET_PCT = 0.01  # 1%
 
@@ -306,11 +306,21 @@ def send_telegram(text):
     if not TELEGRAM_BOT_TOKEN or not TELEGRAM_CHAT_ID:
         print("[WARN] Telegram credentials not set — printing instead:\n")
         print(text)
-        return
+        return False
     url = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage"
-    resp = requests.post(url, data={"chat_id": TELEGRAM_CHAT_ID, "text": text})
+    try:
+        resp = requests.post(
+            url,
+            data={"chat_id": TELEGRAM_CHAT_ID, "text": text},
+            timeout=20,
+        )
+    except requests.RequestException as e:
+        print(f"[ERROR] Telegram send failed: {e}")
+        return False
     if resp.status_code != 200:
         print(f"[ERROR] Telegram send failed: {resp.text}")
+        return False
+    return True
 
 
 def run():
@@ -348,12 +358,12 @@ def run():
         )
         msg = build_message(symbol, direction, candle1, coil, breakout_candle, score, checklist, sl_distance_pct)
         signals.append((score, symbol, msg))
-        state["alerted"].append(symbol)
 
     # Rank by confidence, highest first, and send
     signals.sort(key=lambda x: x[0], reverse=True)
     for score, symbol, msg in signals:
-        send_telegram(msg)
+        if send_telegram(msg):
+            state["alerted"].append(symbol)
 
     if not signals:
         print(f"No new signals this run ({datetime.datetime.now(IST).strftime('%H:%M')}).")

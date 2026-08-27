@@ -129,7 +129,7 @@ Go to your repo → **Settings → Secrets and variables → Actions** → add:
 The repository includes `inside_bar_scanner.yml` at `.github/workflows/inside_bar_scanner.yml`.
 If you are adding it to another repository, place the workflow there at the same path.
 in your repo. It runs automatically every 15 minutes from 10:30 AM to
-1:00 PM IST, **Monday–Friday only** — it will not run on weekends.
+2:30 PM IST, **Monday–Friday only** — it will not run on weekends.
 
 ### E. Test it manually first
 Before relying on the schedule, trigger it manually: go to the **Actions**

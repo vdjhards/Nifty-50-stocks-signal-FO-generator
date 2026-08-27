@@ -10,7 +10,7 @@ import yfinance as yf
 IST = zoneinfo.ZoneInfo("Asia/Kolkata")
 SETUP_START = datetime.time(9, 15)
 COIL_END = datetime.time(10, 30)
-CUTOFF = datetime.time(13, 0)
+CUTOFF = datetime.time(14, 30)
 TARGET_PCT = 0.01
 
 
